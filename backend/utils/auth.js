@@ -33,3 +33,50 @@ const setTokenCookie = (res, user) => {
 
   return token;
 };
+// backend/utils/auth.js
+// ...
+
+const restoreUser = (req, res, next) => {
+  // token parsed from cookies
+  const { token } = req.cookies;
+  req.user = null;
+
+  return jwt.verify(token, secret, null, async (err, jwtPayload) => {
+    if (err) {
+      return next();
+    }
+
+    try {
+      const { id } = jwtPayload.data;
+      req.user = await User.findByPk(id, {
+        attributes: {
+          include: ["email", "createdAt", "updatedAt"],
+        },
+      });
+    } catch (e) {
+      res.clearCookie("token");
+      return next();
+    }
+
+    if (!req.user) res.clearCookie("token");
+
+    return next();
+  });
+};
+// backend/utils/auth.js
+// ...
+
+// If there is no current user, return an error
+const requireAuth = function (req, _res, next) {
+  if (req.user) return next();
+
+  const err = new Error("Authentication required");
+  err.title = "Authentication required";
+  err.errors = { message: "Authentication required" };
+  err.status = 401;
+  return next(err);
+};
+// backend/utils/auth.js
+// ...
+
+module.exports = { setTokenCookie, restoreUser, requireAuth };
