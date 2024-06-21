@@ -6,6 +6,7 @@ if (process.env.NODE_ENV === "production") {
 }
 module.exports = {
   async up(queryInterface, Sequelize) {
+    options.tableName = "Spots";
     await queryInterface.createTable(
       "Bookings",
       {
@@ -18,7 +19,7 @@ module.exports = {
         spotId: {
           type: Sequelize.INTEGER,
           references: {
-            model: "Spots",
+            model: options.tableName,
             key: "id",
           },
 
@@ -30,7 +31,7 @@ module.exports = {
             model: "Users",
             key: "id",
           },
-   
+
           allowNull: false,
         },
         startDate: {
