@@ -20,7 +20,6 @@ module.exports = {
           type: Sequelize.INTEGER,
           references: {
             model: "Spots",
-            key: "id",
           },
 
           allowNull: false,
@@ -29,7 +28,6 @@ module.exports = {
           type: Sequelize.INTEGER,
           references: {
             model: "Users",
-            key: "id",
           },
 
           allowNull: false,
