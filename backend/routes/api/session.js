@@ -18,8 +18,8 @@ const { handleValidationErrors } = require("../../utils/validation");
 // Log in
 
 router.post("/", async (req, res, next) => {
-  const { credential, password } = req.body;
-
+  const { username, email, password } = req.body;
+  const credential = username ? username : email;
   const user = await User.unscoped().findOne({
     where: {
       [Op.or]: {
