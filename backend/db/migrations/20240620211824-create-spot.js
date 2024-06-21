@@ -16,7 +16,7 @@ module.exports = {
       },
       ownerId: {
         type: Sequelize.INTEGER,
-        references: { model: "Users" },
+        references: { model: options.tableName },
         allowNull: false,
       },
       address: {
