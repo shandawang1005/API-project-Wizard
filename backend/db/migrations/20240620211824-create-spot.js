@@ -6,7 +6,6 @@ if (process.env.NODE_ENV === "production") {
 }
 module.exports = {
   async up(queryInterface, Sequelize) {
-    options.tableName = "Spots";
     await queryInterface.createTable("Spots", {
       id: {
         allowNull: false,
@@ -16,7 +15,7 @@ module.exports = {
       },
       ownerId: {
         type: Sequelize.INTEGER,
-        references: { model: options.tableName, key: "id" },
+        references: { model: "Users", key: "id" },
         allowNull: false,
       },
       address: {
