@@ -21,8 +21,7 @@ module.exports = {
             model: "Spots",
             key: "id",
           },
-          onUpdate: "CASCADE",
-          onDelete: "SET NULL",
+
           allowNull: false,
         },
         url: {
