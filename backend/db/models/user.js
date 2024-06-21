@@ -9,16 +9,19 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "userId",
         onDelete: "SET NULL",
         onUpdate: "CASCADE",
+        hooks: true,
       });
       User.hasMany(models.Review, {
         foreignKey: "userId",
         onDelete: "SET NULL",
         onUpdate: "CASCADE",
+        hooks: true,
       });
       User.hasMany(models.Spot, {
         foreignKey: "ownerId",
         onDelete: "SET NULL",
         onUpdate: "CASCADE",
+        hooks: true,
       });
     }
   }
