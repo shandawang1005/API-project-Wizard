@@ -5,6 +5,7 @@ const cors = require("cors");
 const csurf = require("csurf");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
+const routes = require("./routes");
 
 const { environment } = require("./config");
 const isProduction = environment === "production";
@@ -39,7 +40,6 @@ app.use(
   })
 );
 // backend/app.js
-const routes = require("./routes");
 
 // ...
 

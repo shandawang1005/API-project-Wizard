@@ -9,7 +9,10 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Spot.belongsTo(models.User, { foreignKey: "ownerId" });
+      Spot.belongsTo(models.User, {
+        foreignKey: "ownerId",
+        onDelete: "CASCADE",
+      });
       Spot.hasMany(models.Booking, {
         foreignKey: "spotId",
         onDelete: "CASCADE",
@@ -20,20 +23,95 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: "CASCADE",
         hooks: true,
       });
+      Spot.hasMany(models.SpotImage, {
+        foreignKey: "spotId",
+        onDelete: "CASCAED",
+        hooks: true,
+        as: "previewImage",
+      });
     }
   }
   Spot.init(
     {
-      ownerId: { type: DataTypes.INTEGER, allowNull: false },
-      address: { type: DataTypes.STRING, allowNull: false },
-      city: { type: DataTypes.STRING, allowNull: false },
-      state: { type: DataTypes.STRING, allowNull: false },
-      country: { type: DataTypes.STRING, allowNull: false },
-      lat: { type: DataTypes.DECIMAL, allowNull: true },
-      lng: { type: DataTypes.DECIMAL, allowNull: true },
-      name: { type: DataTypes.STRING, allowNull: false },
-      description: { type: DataTypes.TEXT, allowNull: false },
-      price: { type: DataTypes.DECIMAL, allowNull: false, defaultValue: 0 },
+      ownerId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+          notNull: { args: true, msg: "Street address is required" },
+        },
+      },
+      address: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notNull: { args: true, msg: "Street address is required" },
+        },
+      },
+      city: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notNull: { args: true, msg: "City is required" },
+        },
+      },
+      state: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notNull: { args: true, msg: "State is required" },
+        },
+      },
+      country: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notNull: { args: true, msg: "Country is required" },
+        },
+      },
+      lat: {
+        type: DataTypes.DECIMAL,
+        allowNull: true,
+        validate: {
+          max: { args: 90, msg: "Latitude must be within -90 and 90" },
+          min: { args: -90, msg: "Latitude must be within -90 and 90" },
+        },
+      },
+      lng: {
+        type: DataTypes.DECIMAL,
+        allowNull: true,
+        validate: {
+          max: { args: 180, msg: "Longitude must be within -180 and 180" },
+          min: { args: -180, msg: "Longitude must be within -180 and 180" },
+        },
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          len: { args: [1, 50], msg: "Name must be less than 50 characters" },
+          notNull: { args: true, msg: "Name is required" },
+        },
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+        validate: {
+          notNull: { args: true, msg: "Description is required" },
+        },
+      },
+      price: {
+        type: DataTypes.DECIMAL,
+        allowNull: false,
+        defaultValue: 0,
+        validate: {
+          isPositive(price) {
+            if (price <= 0) {
+              throw new Error("Price per day must be a positive number");
+            }
+          },
+          notNull: { args: true, msg: "Price is required" },
+        },
+      },
     },
     {
       sequelize,

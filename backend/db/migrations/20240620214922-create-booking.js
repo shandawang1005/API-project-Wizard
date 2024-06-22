@@ -21,6 +21,7 @@ module.exports = {
           references: {
             model: "Spots",
           },
+          onDelete: "CASCADE",
 
           allowNull: false,
         },
@@ -29,7 +30,7 @@ module.exports = {
           references: {
             model: "Users",
           },
-
+          onDelete: "CASCADE",
           allowNull: false,
         },
         startDate: {

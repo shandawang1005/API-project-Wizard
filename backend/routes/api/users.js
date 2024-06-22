@@ -37,6 +37,12 @@ const validateSignup = [
     .withMessage("Please provide a last name."),
   handleValidationErrors,
 ];
+router.get("/all", async (req, res) => {
+  let allUsers = await User.findAll();
+  res.status(200);
+  return res.json(allUsers);
+});
+
 // Sign up
 router.post("/", validateSignup, async (req, res) => {
   const { email, password, username, firstName, lastName } = req.body;
