@@ -167,7 +167,21 @@ router.get("/current", requireAuth, async (req, res, next) => {
       .status(404)
       .json({ message: "You don't have any upcoming bookings." });
   }
-  res.status(200).json({ Bookings });
+  const formattedBookings = Bookings.map((booking) => {
+    const bookingJson = booking.toJSON();
+    if (bookingJson.Spot) {
+      const spotJson = bookingJson.Spot;
+      let previewImage = null;
+      if (spotJson.SpotImages && spotJson.SpotImages.length > 0) {
+        previewImage = spotJson.SpotImages[0].url;
+      }
+      bookingJson.Spot = { ...spotJson, previewImage: previewImage };
+      delete bookingJson.Spot.SpotImages;
+    }
+    return bookingJson;
+  });
+
+  res.status(200).json(formattedBookings);
 });
 
 /////////////DELETE////////////////////////
@@ -183,7 +197,7 @@ router.delete("/:bookingId", requireAuth, async (req, res, next) => {
     }
     if (booking.userId !== user.id) {
       return res.status(403).json({
-        message: "Forbidden: You cannot edit this booking",
+        message: "Forbidden",
       });
     }
     const now = new Date();

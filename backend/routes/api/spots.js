@@ -91,7 +91,7 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
 
     if (start < now) {
       return res.status(400).json({
-        message: "Validation error",
+        message: "Bad Request",
         errors: {
           startDate: "startDate cannot be in the past",
         },
@@ -100,7 +100,7 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
 
     if (end <= start) {
       return res.status(400).json({
-        message: "Validation error",
+        message: "Bad Request",
         errors: {
           endDate: "endDate cannot be on or before startDate",
         },
@@ -172,7 +172,7 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
       endDate: end.toISOString(),
     });
 
-    res.status(201).json(newBooking);
+    res.status(200).json(newBooking);
   } catch (error) {
     next(error);
   }
@@ -248,8 +248,11 @@ router.post("/:spotId/images", requireAuth, async (req, res, next) => {
       url,
       preview,
     });
+    const createdImage = await SpotImage.findByPk(newImage.id, {
+      attributes: ["id", "url", "preview"],
+    });
 
-    res.status(200).json(newImage);
+    res.status(200).json(createdImage);
   } catch (err) {
     res.status(400);
     next(err);
@@ -285,7 +288,12 @@ router.get("/:spotId/bookings", requireAuth, async (req, res, next) => {
       // Fetch bookings for owner
       const ownerBookings = await Booking.findAll({
         where: { spotId },
-        include: [{ model: User, attributes: ["id", "firstName", "lastName"] }],
+        include: [
+          {
+            model: User,
+            attributes: ["id", "firstName", "lastName"],
+          },
+        ],
       });
       return res.status(200).json({ Bookings: ownerBookings });
     }
@@ -320,7 +328,7 @@ router.get("/:spotId/reviews", async (req, res, next) => {
 //get spot owned by current user
 router.get("/current", requireAuth, async (req, res) => {
   const { user } = req;
-  const spots = await user.getSpots({
+  const Spots = await user.getSpots({
     attributes: {
       include: [
         [Sequelize.fn("AVG", Sequelize.col("Reviews.stars")), "avgRating"],
@@ -341,7 +349,14 @@ router.get("/current", requireAuth, async (req, res) => {
     ],
     group: ["Spot.id", "previewImage.id"],
   });
-  res.json(spots);
+  const flatten = Spots.map((spot) => {
+    return {
+      ...spot.toJSON(),
+      previewImage: spot.toJSON().previewImage[0]?.url,
+    };
+  });
+
+  res.json({ Spots: flatten });
 });
 
 //get spot by spotId
@@ -378,28 +393,84 @@ router.get("/:spotId", async (req, res, next) => {
 
 //GET ALL SPOTS//
 router.get("/", async (req, res, next) => {
-  const Spots = await Spot.findAll({
-    attributes: {
-      include: [
-        [Sequelize.fn("AVG", Sequelize.col("Reviews.stars")), "avgRating"],
-      ],
-    },
-    include: [
-      {
-        model: Review,
-        attributes: [],
-      },
-      {
-        model: SpotImage,
-        attributes: ["url"],
-        where: { preview: true },
-        required: false,
-        as: "previewImage",
-      },
-    ],
-    group: ["Spot.id", "previewImage.id"],
-  });
-  res.json({ Spots });
+  const {
+    page = 1,
+    size = 20,
+    minLat,
+    maxLat,
+    minLng,
+    maxLng,
+    minPrice,
+    maxPrice,
+  } = req.query;
+  const where = {};
+  const error = { errors: {} };
+  error.message = "Bad Request";
+  if (page < 1) error.errors.page = "Page must be greater than or equal to 1";
+  if (page > 10) error.errors.page = "Page must be smaller than or equal to 10";
+  if (size < 1) error.errors.size = "Size must be greater than or equal to 1";
+  if (size > 20) error.errors.size = "Size must be smaller than or equal to 20";
+  if (minLat && isNaN(minLat))
+    error.errors.minLat = "Minimum latitude is invalid";
+  if (maxLat && isNaN(maxLat))
+    error.errors.maxLat = "Maximum latitude is invalid";
+  if (minLng && isNaN(minLng))
+    error.errors.minLng = "Minimum longitude is invalid";
+  if (maxLng && isNaN(maxLng))
+    error.errors.maxLng = "Maximum longitude is invalid";
+  if (minPrice && minPrice < 0)
+    error.errors.minPrice = "Minimum price must be greater than or equal to 0";
+  if (minPrice && isNaN(minPrice))
+    error.errors.minPrice = "Minimum price must be a number";
+  if (maxPrice && isNaN(maxPrice))
+    error.errors.maxPrice = "Maximum price must be a number";
+  if (maxPrice && maxPrice < 0)
+    error.errors.maxPrice = "Maximum price must be greater than or equal to 0";
+
+  if (Object.keys(error.errors).length > 0) {
+    return res.status(400).json(error);
+  }
+  const limit = Math.min(size, 20);
+  const offset = (page - 1) * limit;
+
+  try {
+    // Find spots with pagination and filtering
+    const allSpots = await Spot.findAll({
+      where,
+      limit,
+      offset,
+    });
+
+    // Add average rating and preview image to each spot
+    await Promise.all(
+      allSpots.map(async (spot) => {
+        const avg = await Review.findOne({
+          where: { spotId: spot.id },
+          attributes: [
+            [Sequelize.fn("avg", Sequelize.col("stars")), "avgRating"],
+          ],
+          raw: true,
+        });
+
+        spot.dataValues.avgRating = avg ? avg.avgRating : null;
+
+        const previewImg = await SpotImage.findOne({
+          where: {
+            spotId: spot.id,
+            preview: true,
+          },
+          attributes: ["url"],
+          raw: true,
+        });
+
+        spot.dataValues.previewImage = previewImg ? previewImg.url : null;
+      })
+    );
+
+    res.json({ Spots: allSpots, page, size });
+  } catch (err) {
+    next(err);
+  }
 });
 
 /////////////////////PUT//////////////////////

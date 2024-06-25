@@ -29,7 +29,7 @@ router.delete("/:imageId", requireAuth, async (req, res, next) => {
   //   const spot = await SpotImage.getSpot();
   if (user.id !== review.userId) {
     return res.status(403).json({
-      message: "Forbidden: You cannot delete this image",
+      message: "Forbidden",
     });
   }
   await image.destroy();

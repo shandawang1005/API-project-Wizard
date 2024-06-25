@@ -2,7 +2,7 @@
 
 const express = require("express");
 const bcrypt = require("bcryptjs");
-
+const { Op } = require("sequelize");
 const { setTokenCookie, requireAuth } = require("../../utils/auth");
 const { User } = require("../../db/models");
 // backend/routes/api/users.js
@@ -19,22 +19,22 @@ const validateSignup = [
   check("email")
     .exists({ checkFalsy: true })
     .isEmail()
-    .withMessage("Please provide a valid email."),
+    .withMessage("Invalid email"),
   check("username")
     .exists({ checkFalsy: true })
     .isLength({ min: 4 })
-    .withMessage("Please provide a username with at least 4 characters."),
+    .withMessage("Username is required"),
   check("username").not().isEmail().withMessage("Username cannot be an email."),
   check("password")
     .exists({ checkFalsy: true })
     .isLength({ min: 6 })
-    .withMessage("Password must be 6 characters or more."),
+    .withMessage("Password is required"),
   check("firstName")
     .exists({ checkFalsy: true })
-    .withMessage("Please provide a first name."),
+    .withMessage("First Name is required"),
   check("lastName")
     .exists({ checkFalsy: true })
-    .withMessage("Please provide a last name."),
+    .withMessage("Last Name is required"),
   handleValidationErrors,
 ];
 router.get("/all", async (req, res) => {
@@ -47,6 +47,29 @@ router.get("/all", async (req, res) => {
 router.post("/", validateSignup, async (req, res) => {
   const { email, password, username, firstName, lastName } = req.body;
   const hashedPassword = bcrypt.hashSync(password);
+  const data = await User.findOne({
+    where: { [Op.or]: { email: email, username: username } },
+  });
+  if (data) {
+    console.log(data.email);
+    if (data.email === email) {
+      console.log("Does when in here?");
+      return res.status(500).json({
+        message: "User already exists",
+        errors: {
+          username: "User with that email already exists",
+        },
+      });
+    } else if (data.username === username) {
+      return res.status(500).json({
+        message: "User already exists",
+        errors: {
+          username: "User with that username already exists",
+        },
+      });
+    }
+  }
+
   const user = await User.create({
     email,
     username,

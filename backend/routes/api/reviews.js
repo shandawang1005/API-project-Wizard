@@ -91,32 +91,65 @@ router.post("/:reviewId/images", requireAuth, async (req, res, next) => {
 //Get Current User's Review//
 router.get("/current", requireAuth, async (req, res, next) => {
   const { user } = req;
-  const Reviews = await user.getReviews({
-    include: [
-      {
-        model: User,
-        attributes: ["id", "firstName", "lastName"],
-      },
-      {
-        model: Spot,
-        attributes: { exclude: ["createdAt", "updatedAt"] },
-        include: [
-          {
-            model: SpotImage,
-            attributes: ["url"],
-            where: { preview: true },
-            required: false,
-            as: "previewImage",
-          },
-        ],
-      },
-      {
-        model: ReviewImage,
-        attributes: { exclude: ["reviewId", "createdAt", "updatedAt"] },
-      },
-    ],
-  });
-  res.json({ Reviews });
+
+  try {
+    const reviews = await user.getReviews({
+      include: [
+        {
+          model: User,
+          attributes: ["id", "firstName", "lastName"],
+        },
+        {
+          model: Spot,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+          include: [
+            {
+              model: SpotImage,
+              attributes: ["url"],
+              where: { preview: true },
+              as: "previewImage",
+              required: false,
+              limit: 1,
+            },
+          ],
+        },
+        {
+          model: ReviewImage,
+          attributes: { exclude: ["reviewId", "createdAt", "updatedAt"] },
+        },
+      ],
+    });
+
+    const formattedReviews = reviews.map((review) => {
+      const reviewJson = review.toJSON();
+
+      // Flatten the Spot data within each Review
+      if (reviewJson.Spot) {
+        const spotJson = reviewJson.Spot;
+
+        // Find the preview image from the SpotImages array
+        let previewImage = null;
+        if (spotJson.SpotImages && spotJson.SpotImages.length > 0) {
+          previewImage = spotJson.SpotImages[0].url;
+        }
+
+        // Assign the flattened Spot data back to the review
+        reviewJson.Spot = {
+          ...spotJson,
+          previewImage: previewImage,
+        };
+
+        // Remove the SpotImages array as it's now redundant
+        delete reviewJson.Spot.SpotImages;
+      }
+
+      return reviewJson;
+    });
+
+    res.json(formattedReviews);
+  } catch (err) {
+    next(err);
+  }
 });
 
 //////////////DELETE////////////////////
