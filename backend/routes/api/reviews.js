@@ -12,6 +12,7 @@ const {
   ReviewImage,
   User,
 } = require("../../db/models");
+const { Op } = require("sequelize");
 ///////////////PUT///////////////////////
 //Edit a review
 router.put("/:reviewId", requireAuth, async (req, res, next) => {
@@ -29,14 +30,25 @@ router.put("/:reviewId", requireAuth, async (req, res, next) => {
       message: "You do not have permission to update this review",
     });
   }
+  const errors = {};
+
   if (!review || typeof review !== "string") {
-    return res.status(400).json({
-      message: "Review text is required",
-    });
+    errors.review = "Review text is required";
   }
-  if (!stars || !Number.isInteger(stars) || stars < 1 || stars > 5) {
+
+  if (
+    typeof stars !== "number" ||
+    !Number.isInteger(stars) ||
+    stars < 1 ||
+    stars > 5
+  ) {
+    errors.stars = "Stars must be an integer from 1 to 5";
+  }
+
+  if (Object.keys(errors).length > 0) {
     return res.status(400).json({
-      message: "Stars must be an integer from 1 to 5",
+      message: "Bad Request",
+      errors,
     });
   }
 
@@ -71,7 +83,7 @@ router.post("/:reviewId/images", requireAuth, async (req, res, next) => {
     });
   }
   const reviewImage = await ReviewImage.create({ reviewId, url });
-  res.status(201).json(reviewImage);
+  res.status(200).json({ id: reviewImage.id, url: reviewImage.url });
 });
 
 ///////////////////GET/////////////////////
@@ -120,7 +132,7 @@ router.delete("/:reviewId", requireAuth, async (req, res, next) => {
   }
   if (theReview.userId !== user.id) {
     return res.status(403).json({
-      message: "You do not have permission to add images to this review",
+      message: "You do not have permission to delete to this review",
     });
   }
   await theReview.destroy();
