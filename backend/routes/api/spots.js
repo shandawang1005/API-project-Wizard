@@ -375,6 +375,7 @@ router.get("/:spotId", async (req, res, next) => {
         attributes: [],
       },
     ],
+    group: ["Spot.id"],
   });
   if (!data.id) {
     return res.status(404).json({ message: "Spot couldn't be found" });
