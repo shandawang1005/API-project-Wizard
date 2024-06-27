@@ -377,7 +377,7 @@ router.get("/:spotId", async (req, res, next) => {
     ],
     group: ["Spot.id"],
   });
-  if (!data.id) {
+  if (!data) {
     return res.status(404).json({ message: "Spot couldn't be found" });
   }
 
@@ -436,7 +436,7 @@ router.get("/", async (req, res, next) => {
 
   try {
     // Find spots with pagination and filtering
-    const allSpots = await Spot.findAll({
+    const Spots = await Spot.findAll({
       where,
       limit,
       offset,
@@ -444,7 +444,7 @@ router.get("/", async (req, res, next) => {
 
     // Add average rating and preview image to each spot
     await Promise.all(
-      allSpots.map(async (spot) => {
+      Spots.map(async (spot) => {
         const avg = await Review.findOne({
           where: { spotId: spot.id },
           attributes: [
@@ -453,7 +453,7 @@ router.get("/", async (req, res, next) => {
           raw: true,
         });
 
-        spot.dataValues.avgRating = avg ? avg.avgRating : null;
+        spot.dataValues.avgRating = avg  && avg.avgRating !== null? avg.avgRating.toFixed(2) : null;
 
         const previewImg = await SpotImage.findOne({
           where: {
@@ -468,7 +468,7 @@ router.get("/", async (req, res, next) => {
       })
     );
 
-    res.json({ Spots: allSpots, page, size });
+    res.json({ ...Spots, price: Number(Spots.price), page, size });
   } catch (err) {
     next(err);
   }
