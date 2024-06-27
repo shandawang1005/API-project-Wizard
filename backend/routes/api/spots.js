@@ -453,7 +453,10 @@ router.get("/", async (req, res, next) => {
           raw: true,
         });
 
-        spot.dataValues.avgRating = avg  && avg.avgRating !== null? Number(avg.avgRating).toFixed(2) : null;
+        spot.dataValues.avgRating =
+          avg && avg.avgRating !== null
+            ? Number(avg.avgRating).toFixed(2)
+            : null;
 
         const previewImg = await SpotImage.findOne({
           where: {
@@ -467,8 +470,8 @@ router.get("/", async (req, res, next) => {
         spot.dataValues.previewImage = previewImg ? previewImg.url : null;
       })
     );
-
-    res.json({ ...Spots, price: Number(Spots.price), page, size });
+    const result = { ...Spots, price: +Spots.price, page, size };
+    res.json(result);
   } catch (err) {
     next(err);
   }
