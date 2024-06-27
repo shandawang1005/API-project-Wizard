@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const moment = require("moment");
 module.exports = (sequelize, DataTypes) => {
   class ReviewImage extends Model {
     /**
@@ -26,6 +27,16 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "ReviewImage",
+      getterMethods: {
+        createdAt() {
+          const rawValue = this.getDataValue("createdAt");
+          return moment(rawValue).format("YYYY-MM-DD HH:mm:ss");
+        },
+        updatedAt() {
+          const rawValue = this.getDataValue("updatedAt");
+          return moment(rawValue).format("YYYY-MM-DD HH:mm:ss");
+        },
+      },
     }
   );
   return ReviewImage;
