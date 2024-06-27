@@ -70,7 +70,7 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       lat: {
-        type: DataTypes.DECIMAL,
+        type: DataTypes.FLOAT,
         allowNull: true,
         validate: {
           max: { args: 90, msg: "Latitude must be within -90 and 90" },
@@ -78,7 +78,7 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       lng: {
-        type: DataTypes.DECIMAL,
+        type: DataTypes.FLOAT,
         allowNull: true,
         validate: {
           max: { args: 180, msg: "Longitude must be within -180 and 180" },
@@ -101,7 +101,7 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       price: {
-        type: DataTypes.DECIMAL,
+        type: DataTypes.FLOAT,
         allowNull: false,
         defaultValue: 0,
         validate: {

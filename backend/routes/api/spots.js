@@ -470,7 +470,7 @@ router.get("/", async (req, res, next) => {
         spot.dataValues.previewImage = previewImg ? previewImg.url : null;
       })
     );
-    const result = { ...Spots, price: +Spots.price, page, size };
+    const result = { ...Spots, page, size };
     res.json(result);
   } catch (err) {
     next(err);
